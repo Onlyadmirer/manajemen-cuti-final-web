@@ -66,7 +66,68 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-### 5. Konfigurasi Database
+### 5. Konfigurasi API Fonnte (WhatsApp Notifikasi)
+
+Aplikasi ini menggunakan Fonnte untuk mengirim notifikasi WhatsApp kepada kontak darurat karyawan saat pengajuan cuti disetujui atau ditolak.
+
+**Langkah-langkah konfigurasi:**
+
+1. **Buat Akun Fonnte**
+
+    - Kunjungi [https://fonnte.com](https://fonnte.com)
+    - Daftar dan buat akun baru
+    - Login ke dashboard Fonnte
+
+2. **Dapatkan API Token**
+
+    - Setelah login, buka menu **Settings** atau **API** (kalau tidak ada biasanya di menu Profile)
+    - Salin **Token** yang tersedia
+    - Token berbentuk string panjang (contoh: `aBcDeFgHiJkLmNoPqRsTuVwXyZ123456`)
+
+3. **Hubungkan Device WhatsApp**
+
+    - Klik Menu Device di mennu navigasi
+    - Klik add device
+    - ikuti instruksi untuk menghubungkan nomor WhatsApp Anda
+    - Scan QR code menggunakan WhatsApp di smartphone
+    - Pastikan status device menunjukkan "Connected"
+
+4. **Tambahkan Token ke File `.env`**
+
+    Edit file `.env` dan tambahkan token Fonnte:
+
+    ```env
+    FONNTE_TOKEN=aBcDeFgHiJkLmNoPqRsTuVwXyZ123456
+    ```
+
+5. **Test Konfigurasi Fonnte**
+
+    Setelah menambahkan token, test apakah konfigurasi sudah benar:
+
+    ```bash
+    php artisan fonnte:test 08123456789
+    ```
+
+    Ganti `08123456789` dengan nomor WhatsApp Anda. Jika berhasil, Anda akan menerima pesan test di WhatsApp.
+
+**Catatan Penting:**
+
+-   Jika tidak menggunakan fitur notifikasi WhatsApp, Anda bisa mengosongkan `FONNTE_TOKEN` atau menghapus baris tersebut dari `.env`
+-   Aplikasi akan tetap berfungsi normal tanpa Fonnte, hanya notifikasi WhatsApp yang tidak akan terkirim
+-   Pastikan nomor WhatsApp yang terhubung ke Fonnte dalam keadaan online dan terkoneksi internet
+-   Fonnte memiliki limit pengiriman pesan berdasarkan paket yang Anda pilih
+
+**Format Nomor WhatsApp:**
+
+Saat mengisi kontak darurat di form cuti, gunakan format:
+
+-   `08123456789` (dengan 0 di depan), atau
+-   `628123456789` (dengan kode negara 62), atau
+-   `+628123456789` (dengan +62)
+
+Sistem akan otomatis memformat nomor ke format yang benar.
+
+### 6. Konfigurasi Database
 
 Secara default, aplikasi menggunakan SQLite. File database akan dibuat otomatis saat migrasi.
 
@@ -87,7 +148,7 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### 6. Jalankan Migrasi dan Seeder
+### 7. Jalankan Migrasi dan Seeder
 
 Jalankan migrasi database dan seeder untuk membuat tabel dan data awal:
 
@@ -95,7 +156,7 @@ Jalankan migrasi database dan seeder untuk membuat tabel dan data awal:
 php artisan migrate:fresh --seed
 ```
 
-### 7. Build Assets
+### 8. Build Assets
 
 Build asset frontend (CSS/JS):
 
@@ -103,7 +164,7 @@ Build asset frontend (CSS/JS):
 npm run build
 ```
 
-### 8. Jalankan Aplikasi
+### 9. Jalankan Aplikasi
 
 **Untuk Development:**
 
@@ -129,7 +190,7 @@ Di terminal kedua:
 npm run dev
 ```
 
-### 9. Login ke Aplikasi
+### 10. Login ke Aplikasi
 
 Setelah seeder berjalan, Anda dapat login dengan akun default yang telah dibuat.
 
@@ -209,6 +270,7 @@ routes/
 -   **Database:** SQLite (default) / MySQL / PostgreSQL
 -   **PDF Generator:** DomPDF
 -   **Authentication:** Laravel Breeze
+-   **WhatsApp Notification:** Fonnte API
 
 ## License
 

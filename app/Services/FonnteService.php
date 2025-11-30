@@ -29,12 +29,13 @@ class FonnteService
             $phone = $this->formatPhoneNumber($phone);
 
             // Fonnte API menggunakan form data, bukan JSON
-            $response = Http::withHeaders([
-                'Authorization' => $this->token,
-            ])->asForm()->post($this->baseUrl . '/send', [
-                'target' => $phone,
-                'message' => $message,
-            ]);
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => $this->token,
+                ])->asForm()->post($this->baseUrl . '/send', [
+                    'target' => $phone,
+                    'message' => $message,
+                ]);
 
             $result = $response->json();
 
@@ -95,9 +96,10 @@ class FonnteService
     public function checkDevice()
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => $this->token,
-            ])->post($this->baseUrl . '/device');
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => $this->token,
+                ])->post($this->baseUrl . '/device');
 
             $result = $response->json();
 
