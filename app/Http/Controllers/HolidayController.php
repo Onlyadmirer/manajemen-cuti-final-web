@@ -5,27 +5,49 @@ namespace App\Http\Controllers;
 use App\Models\Holiday;
 use Illuminate\Http\Request;
 
+/**
+ * Controller untuk mengelola data hari libur nasional/cuti bersama
+ * Digunakan dalam perhitungan hari kerja efektif pengajuan cuti
+ * 
+ * @package App\Http\Controllers
+ * @author Sistem Manajemen Cuti
+ */
 class HolidayController extends Controller
 {
-    // 1. TAMPILKAN DAFTAR HARI LIBUR
+    /**
+     * Menampilkan daftar hari libur yang telah didaftarkan
+     * Diurutkan dari tanggal terbaru
+     * 
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
-        // Urutkan dari tanggal terbaru
+        // Mengurutkan berdasarkan tanggal dari yang terbaru
         $holidays = Holiday::orderBy('holiday_date', 'desc')->paginate(10);
         return view('admin.holidays.index', compact('holidays'));
     }
 
-    // 2. FORM TAMBAH
+    /**
+     * Menampilkan form untuk menambahkan hari libur baru
+     * 
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
         return view('admin.holidays.create');
     }
 
-    // 3. SIMPAN DATA
+    /**
+     * Menyimpan data hari libur baru ke database
+     * Tanggal harus unik (tidak boleh duplikat)
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'holiday_date' => 'required|date|unique:holidays,holiday_date', // Tanggal harus unik
+            'holiday_date' => 'required|date|unique:holidays,holiday_date',
             'description' => 'required|string|max:255',
         ]);
 
@@ -34,18 +56,29 @@ class HolidayController extends Controller
         return redirect()->route('holidays.index')->with('success', 'Hari libur berhasil ditambahkan!');
     }
 
-    // 4. FORM EDIT
+    /**
+     * Menampilkan form untuk mengedit data hari libur
+     * 
+     * @param  \App\Models\Holiday  $holiday
+     * @return \Illuminate\View\View
+     */
     public function edit(Holiday $holiday)
     {
         return view('admin.holidays.edit', compact('holiday'));
     }
 
-    // 5. UPDATE DATA
+    /**
+     * Memperbarui data hari libur di database
+     * Validasi unik kecuali untuk data yang sedang diedit
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Holiday  $holiday
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, Holiday $holiday)
     {
         $request->validate([
-            // Unik kecuali punya diri sendiri
-            'holiday_date' => 'required|date|unique:holidays,holiday_date,' . $holiday->id, 
+            'holiday_date' => 'required|date|unique:holidays,holiday_date,' . $holiday->id,
             'description' => 'required|string|max:255',
         ]);
 
@@ -54,7 +87,12 @@ class HolidayController extends Controller
         return redirect()->route('holidays.index')->with('success', 'Data hari libur diperbarui!');
     }
 
-    // 6. HAPUS DATA
+    /**
+     * Menghapus data hari libur dari database
+     * 
+     * @param  \App\Models\Holiday  $holiday
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Holiday $holiday)
     {
         $holiday->delete();

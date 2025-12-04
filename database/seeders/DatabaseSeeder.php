@@ -8,17 +8,28 @@ use App\Models\Holiday;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Database Seeder - Mengisi data awal untuk sistem
+ * Membuat user demo, divisi, dan hari libur contoh
+ * 
+ * @package Database\Seeders
+ * @author Sistem Manajemen Cuti
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Menjalankan seeding database
+     * Membuat data demo untuk testing sistem
+     * 
+     * Password default semua akun: "password"
+     * 
+     * @return void
      */
     public function run(): void
     {
-        // Password default untuk semua akun: "password"
         $password = Hash::make('password');
 
-        // 1. Buat ADMIN
+        // Membuat user dengan role Admin
         User::create([
             'name' => 'Admin Sistem',
             'username' => 'admin',
@@ -28,7 +39,7 @@ class DatabaseSeeder extends Seeder
             'annual_leave_quota' => 12,
         ]);
 
-        // 2. Buat HRD
+        // Membuat user dengan role HRD (Human Resource Development)
         User::create([
             'name' => 'Ibu HRD',
             'username' => 'hrd',
@@ -38,8 +49,7 @@ class DatabaseSeeder extends Seeder
             'annual_leave_quota' => 12,
         ]);
 
-        // 3. Buat KETUA DIVISI (Manager IT)
-        // Kita buat usernya dulu
+        // Membuat user dengan role Manager Divisi (IT Manager)
         $managerIT = User::create([
             'name' => 'Pak Budi (Manager IT)',
             'username' => 'manager_it',
@@ -50,30 +60,29 @@ class DatabaseSeeder extends Seeder
         ]);
 
 
-        // 4. Buat DIVISI IT dan pasang Manager tadi sebagai ketuanya
+        // Membuat divisi IT dan menetapkan manager
         $divisiIT = Division::create([
             'name' => 'Information Technology',
             'description' => 'Tim Pengembang Aplikasi',
             'manager_id' => $managerIT->id,
         ]);
 
-        // Update data Pak Budi agar dia juga terdata masuk di divisi IT
+        // Mengupdate divisi manager agar terdaftar sebagai anggota divisi
         $managerIT->update(['division_id' => $divisiIT->id]);
 
-        // 5. Buat KARYAWAN BIASA (Staff IT)
-        // Karyawan ini bawahan Pak Budi
+        // Membuat karyawan biasa (staff IT) - bawahan manager
         User::create([
             'name' => 'Andi Staff',
             'username' => 'andi',
             'email' => 'andi@kantor.com',
             'password' => $password,
             'role' => 'employee',
-            'division_id' => $divisiIT->id, // Masuk ke divisi IT
+            'division_id' => $divisiIT->id,
             'annual_leave_quota' => 12,
-            'join_date' => '2023-01-01', // Sudah > 1 tahun
+            'join_date' => '2023-01-01',
         ]);
 
-        // 6. Buat KARYAWAN BARU (Belum 1 Tahun / Contoh User Lain)
+        // Membuat karyawan baru (belum memiliki kuota cuti tahunan)
         User::create([
             'name' => 'Siti Junior',
             'username' => 'siti',
@@ -81,11 +90,11 @@ class DatabaseSeeder extends Seeder
             'password' => $password,
             'role' => 'employee',
             'division_id' => $divisiIT->id,
-            'annual_leave_quota' => 0, // Belum dapat cuti
-            'join_date' => date('Y-m-d'), // Baru masuk hari ini
+            'annual_leave_quota' => 0,
+            'join_date' => date('Y-m-d'),
         ]);
 
-        // 7. Buat HARI LIBUR Contoh (Fitur Opsional)
+        // Membuat data hari libur nasional/cuti bersama
         Holiday::create([
             'holiday_date' => '2025-12-25',
             'description' => 'Hari Raya Natal',

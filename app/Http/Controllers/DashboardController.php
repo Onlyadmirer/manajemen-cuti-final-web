@@ -9,14 +9,27 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller untuk mengelola dashboard berdasarkan role pengguna
+ * Menampilkan data statistik dan informasi sesuai dengan hak akses
+ * 
+ * @package App\Http\Controllers
+ * @author Sistem Manajemen Cuti
+ */
 class DashboardController extends Controller
 {
+    /**
+     * Menampilkan dashboard sesuai dengan role pengguna
+     * (Admin, HRD, Manager Divisi, atau Karyawan)
+     * 
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        // 1. Logika untuk ADMIN [cite: 971-978]
+        // Dashboard untuk Admin - Menampilkan statistik global sistem
         if ($user->hasRole('admin')) {
             $data = [
                 'total_employees' => User::where('role', 'employee')->count(),
@@ -30,9 +43,9 @@ class DashboardController extends Controller
             return view('admin.dashboard', $data);
         }
 
-        // 2. Logika untuk HRD [cite: 989-994]
+        // Dashboard untuk HRD - Menampilkan pengajuan yang perlu persetujuan final
         if ($user->hasRole('hr')) {
-            // HRD perlu melihat pengajuan yang sudah disetujui Leader, ATAU pengajuan dari Manager langsung
+            // Mengambil pengajuan yang sudah disetujui manager atau pengajuan langsung dari manager
             $pendingFinal = LeaveRequest::where('status', 'approved_by_leader')
                 ->orWhere(function($query) {
                     $query->where('status', 'pending')
@@ -53,11 +66,11 @@ class DashboardController extends Controller
             return view('hr.dashboard', $data);
         }
 
-        // 3. Logika untuk MANAGER (Ketua Divisi) [cite: 985-988]
+        // Dashboard untuk Manager Divisi - Menampilkan pengajuan dari anggota divisi
         if ($user->hasRole('division_manager')) {
             $division = $user->managedDivision;
             
-            // Ambil pengajuan pending HANYA dari anggota divisinya
+            // Mengambil pengajuan pending dari karyawan dalam divisi yang dikelola
             $pendingVerification = 0;
             $members = collect([]);
             
@@ -82,8 +95,7 @@ class DashboardController extends Controller
             return view('manager.dashboard', $data);
         }
 
-        // 4. Logika untuk EMPLOYEE (Karyawan) [cite: 979-984]
-        // Default role
+        // Dashboard untuk Karyawan - Menampilkan informasi pribadi dan kuota cuti
         $data = [
             'quota_remaining' => $user->annual_leave_quota, // Kuota realtime
             'sick_leave_count' => $user->leaveRequests()->where('leave_type', 'sick')->count(),

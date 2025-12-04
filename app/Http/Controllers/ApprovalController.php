@@ -7,22 +7,43 @@ use App\Services\FonnteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller untuk mengelola persetujuan pengajuan cuti
+ * Menangani approval dari Manager Divisi dan HRD
+ * 
+ * @package App\Http\Controllers
+ * @author Sistem Manajemen Cuti
+ */
 class ApprovalController extends Controller
 {
+    /**
+     * Instance service untuk notifikasi WhatsApp
+     * @var FonnteService
+     */
     protected $fonnteService;
 
+    /**
+     * Constructor - Inject FonnteService untuk notifikasi
+     * 
+     * @param  FonnteService  $fonnteService
+     */
     public function __construct(FonnteService $fonnteService)
     {
         $this->fonnteService = $fonnteService;
     }
 
-    // 1. TAMPILKAN DAFTAR ANTRIAN APPROVAL [cite: 954-956]
+    /**
+     * Menampilkan daftar pengajuan cuti yang menunggu persetujuan
+     * Disesuaikan berdasarkan role (Manager atau HRD)
+     * 
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         $user = Auth::user();
-        $approvals = collect(); // Koleksi kosong
+        $approvals = collect();
 
-        // LOGIKA MANAGER: Lihat pending dari bawahan satu divisi
+        // Manager hanya melihat pengajuan dari anggota divisinya
         if ($user->role === 'division_manager' && $user->managedDivision) {
             $approvals = LeaveRequest::where('status', 'pending')
                 ->whereHas('user', function ($query) use ($user) {
@@ -33,7 +54,7 @@ class ApprovalController extends Controller
                 ->get();
         }
 
-        // LOGIKA HRD: Lihat (Approved by Leader) ATAU (Pending dari Manager)
+        // HRD melihat pengajuan yang sudah disetujui manager atau langsung dari manager
         if ($user->role === 'hr') {
             $approvals = LeaveRequest::where('status', 'approved_by_leader') // Sudah lolos manager
                 ->orWhere(function ($query) {
@@ -49,12 +70,19 @@ class ApprovalController extends Controller
         return view('approvals.index', compact('approvals'));
     }
 
-    // 2. PROSES APPROVE (SETUJU)
+    /**
+     * Menyetujui pengajuan cuti
+     * Manager: mengubah status menjadi approved_by_leader
+     * HRD: mengubah status menjadi approved (final) dan mengirim notifikasi
+     * 
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function approve(LeaveRequest $leaveRequest)
     {
         $user = Auth::user();
 
-        // Jika Manager yang approve
+        // Proses persetujuan oleh Manager Divisi
         if ($user->role === 'division_manager') {
             $leaveRequest->update([
                 'status' => 'approved_by_leader',
@@ -63,7 +91,7 @@ class ApprovalController extends Controller
             return back()->with('success', 'Pengajuan disetujui. Melanjutkan ke HRD.');
         }
 
-        // Jika HRD yang approve (FINAL) [cite: 957-960]
+        // Proses persetujuan final oleh HRD
         if ($user->role === 'hr') {
             $leaveRequest->update([
                 'status' => 'approved',
@@ -80,16 +108,23 @@ class ApprovalController extends Controller
         abort(403);
     }
 
-    // 3. PROSES REJECT (TOLAK)
+    /**
+     * Menolak pengajuan cuti
+     * Mengembalikan kuota cuti dan mengirim notifikasi penolakan
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function reject(Request $request, LeaveRequest $leaveRequest)
     {
         $request->validate([
-            'rejection_reason' => 'required|string|min:5', // Wajib isi alasan [cite: 1016]
+            'rejection_reason' => 'required|string|min:5',
         ]);
 
         $user = Auth::user();
 
-        // Kembalikan kuota cuti ke karyawan karena ditolak [cite: 845]
+        // Mengembalikan kuota cuti tahunan karena pengajuan ditolak
         if ($leaveRequest->leave_type == 'annual') {
             $leaveRequest->user->increment('annual_leave_quota', $leaveRequest->total_days);
         }
@@ -97,12 +132,11 @@ class ApprovalController extends Controller
         $leaveRequest->update([
             'status' => 'rejected',
             'rejection_reason' => $request->rejection_reason,
-            // Catat siapa yang menolak
             'leader_approver_id' => ($user->role === 'division_manager') ? $user->id : $leaveRequest->leader_approver_id,
             'hr_approver_id' => ($user->role === 'hr') ? $user->id : $leaveRequest->hr_approver_id,
         ]);
 
-        // Kirim notifikasi WhatsApp ke emergency contact
+        // Mengirim notifikasi penolakan via WhatsApp
         $this->fonnteService->sendLeaveNotification($leaveRequest, 'rejected', $request->rejection_reason);
 
         return back()->with('success', 'Pengajuan ditolak. Kuota telah dikembalikan. Notifikasi telah dikirim.');

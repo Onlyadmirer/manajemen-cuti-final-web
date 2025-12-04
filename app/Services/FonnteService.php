@@ -5,22 +5,41 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Service untuk integrasi WhatsApp menggunakan Fonnte API
+ * Menangani pengiriman notifikasi persetujuan/penolakan cuti
+ * 
+ * @package App\Services
+ * @author Sistem Manajemen Cuti
+ */
 class FonnteService
 {
+    /**
+     * Token autentikasi Fonnte API
+     * @var string
+     */
     protected $token;
+    
+    /**
+     * Base URL Fonnte API
+     * @var string
+     */
     protected $baseUrl = 'https://api.fonnte.com';
 
+    /**
+     * Constructor - Inisialisasi token dari konfigurasi
+     */
     public function __construct()
     {
         $this->token = config('services.fonnte.token');
     }
 
     /**
-     * Kirim pesan WhatsApp
+     * Mengirim pesan WhatsApp ke nomor tujuan
      * 
-     * @param string $phone Nomor telepon tujuan (format: 628xxxxxxxxxx)
-     * @param string $message Isi pesan
-     * @return array
+     * @param  string  $phone  Nomor telepon tujuan (format: 628xxxxxxxxxx)
+     * @param  string  $message  Isi pesan yang akan dikirim
+     * @return array  Response hasil pengiriman
      */
     public function sendMessage($phone, $message)
     {
@@ -65,10 +84,11 @@ class FonnteService
     }
 
     /**
-     * Format nomor telepon ke format internasional
+     * Memformat nomor telepon ke format internasional Indonesia
+     * Menghapus karakter non-numerik dan menambahkan kode negara 62
      * 
-     * @param string $phone
-     * @return string
+     * @param  string  $phone  Nomor telepon yang akan diformat
+     * @return string  Nomor telepon terformat (62xxxxxxxxxx)
      */
     protected function formatPhoneNumber($phone)
     {
@@ -89,9 +109,9 @@ class FonnteService
     }
 
     /**
-     * Cek status device WhatsApp di Fonnte
+     * Memeriksa status koneksi device WhatsApp di Fonnte
      * 
-     * @return array
+     * @return array  Status device dan informasi koneksi
      */
     public function checkDevice()
     {
@@ -126,10 +146,10 @@ class FonnteService
     }
 
     /**
-     * Test kirim pesan ke nomor tertentu
+     * Mengirim pesan test untuk memverifikasi konfigurasi Fonnte
      * 
-     * @param string $phone
-     * @return array
+     * @param  string  $phone  Nomor telepon tujuan untuk test
+     * @return array  Response hasil pengiriman
      */
     public function testMessage($phone)
     {
@@ -142,12 +162,13 @@ class FonnteService
     }
 
     /**
-     * Kirim notifikasi approval cuti
+     * Mengirim notifikasi WhatsApp terkait persetujuan/penolakan cuti
+     * ke kontak darurat yang terdaftar pada pengajuan
      * 
-     * @param \App\Models\LeaveRequest $leaveRequest
-     * @param string $status 'approved' atau 'rejected'
-     * @param string|null $rejectionReason
-     * @return array
+     * @param  \App\Models\LeaveRequest  $leaveRequest  Data pengajuan cuti
+     * @param  string  $status  Status pengajuan ('approved' atau 'rejected')
+     * @param  string|null  $rejectionReason  Alasan penolakan jika ditolak
+     * @return array  Response hasil pengiriman
      */
     public function sendLeaveNotification($leaveRequest, $status, $rejectionReason = null)
     {

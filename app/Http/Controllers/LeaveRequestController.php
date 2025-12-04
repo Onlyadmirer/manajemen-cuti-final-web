@@ -8,11 +8,21 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf; // <--- PENTING: Import Library PDF
+use Barryvdh\DomPDF\Facade\Pdf;
 
+/**
+ * Controller untuk mengelola pengajuan cuti karyawan
+ * 
+ * @package App\Http\Controllers
+ * @author Sistem Manajemen Cuti
+ */
 class LeaveRequestController extends Controller
 {
-    // 1. Tampilkan Riwayat Cuti
+    /**
+     * Menampilkan daftar riwayat pengajuan cuti karyawan
+     * 
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         $requests = LeaveRequest::where('user_id', Auth::id())
@@ -22,13 +32,24 @@ class LeaveRequestController extends Controller
         return view('employee.leaves.index', compact('requests'));
     }
 
-    // 2. Form Pengajuan
+    /**
+     * Menampilkan form pengajuan cuti baru
+     * 
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
         return view('employee.leaves.create');
     }
 
-    // 3. Proses Simpan
+    /**
+     * Memproses dan menyimpan pengajuan cuti baru
+     * Melakukan validasi H-3 untuk cuti tahunan, penghitungan hari kerja,
+     * pengecekan kuota, dan validasi overlap tanggal
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -44,19 +65,20 @@ class LeaveRequestController extends Controller
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
 
-        // A. Validasi Cuti Tahunan (H-3)
+        // Validasi cuti tahunan harus diajukan minimal H-3
         if ($request->leave_type == 'annual') {
-            if ($startDate->diffInDays(now()) < 3 && $startDate->isFuture()) {
-                return back()->withErrors(['start_date' => 'Pengajuan Cuti Tahunan minimal H-3.'])->withInput();
+            $minDate = Carbon::now()->addDays(3)->startOfDay();
+            if ($startDate->lt($minDate)) {
+                return back()->withErrors(['start_date' => 'Pengajuan Cuti Tahunan minimal H-3 (3 hari sebelum tanggal mulai cuti).'])->withInput();
             }
         }
 
-        // B. Validasi Cuti Sakit (Wajib File)
+        // Validasi cuti sakit wajib melampirkan surat keterangan dokter
         if ($request->leave_type == 'sick' && !$request->hasFile('attachment')) {
             return back()->withErrors(['attachment' => 'Wajib upload surat dokter.'])->withInput();
         }
 
-        // C. Hitung Hari Kerja
+        // Menghitung total hari kerja (tidak termasuk weekend dan hari libur)
         $totalDays = 0;
         $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
         $holidays = Holiday::pluck('holiday_date')->toArray();
@@ -71,12 +93,12 @@ class LeaveRequestController extends Controller
             return back()->withErrors(['start_date' => 'Tanggal yang dipilih hari libur semua.'])->withInput();
         }
 
-        // D. Cek Kuota
+        // Validasi kuota cuti tahunan karyawan
         if ($request->leave_type == 'annual' && $user->annual_leave_quota < $totalDays) {
             return back()->withErrors(['annual_leave_quota' => "Kuota tidak cukup."])->withInput();
         }
 
-        // E. Cek Overlap
+        // Pengecekan overlap dengan pengajuan cuti yang sudah ada
         $overlap = LeaveRequest::where('user_id', $user->id)
             ->whereIn('status', ['pending', 'approved_by_leader', 'approved'])
             ->where(function ($query) use ($startDate, $endDate) {
@@ -88,13 +110,13 @@ class LeaveRequestController extends Controller
             return back()->withErrors(['start_date' => 'Anda sudah mengajukan cuti di tanggal ini.'])->withInput();
         }
 
-        // Simpan File
+        // Menyimpan file lampiran jika ada
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('attachments', 'public');
         }
 
-        // Kurangi Kuota
+        // Mengurangi kuota cuti tahunan karyawan
         if ($request->leave_type == 'annual') {
             $user->decrement('annual_leave_quota', $totalDays);
         }
@@ -115,12 +137,15 @@ class LeaveRequestController extends Controller
         return redirect()->route('leaves.index')->with('success', 'Pengajuan berhasil dikirim!');
     }
 
-    // 4. Batalkan Cuti
-    public function destroy(LeaveRequest $leaveRequest) // Ganti nama parameter biar sesuai route resource
+    /**
+     * Membatalkan pengajuan cuti yang masih berstatus pending
+     * Mengembalikan kuota cuti jika jenis cuti adalah tahunan
+     * 
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy(LeaveRequest $leaveRequest)
     {
-        // Karena route resource menggunakan parameter {leaf}, Laravel kadang bingung bindingnya.
-        // Kita pakai ID manual saja kalau error, tapi coba ini dulu.
-        // Jika error "404 not found", ganti parameter jadi ($id) lalu $leaveRequest = LeaveRequest::findOrFail($id);
         
         if (Auth::id() !== $leaveRequest->user_id) {
             abort(403);
@@ -130,26 +155,26 @@ class LeaveRequestController extends Controller
             return back()->with('error', 'Tidak bisa dibatalkan karena sudah diproses.');
         }
 
+        // Mengembalikan kuota cuti tahunan jika dibatalkan
         if ($leaveRequest->leave_type == 'annual') {
             /** @var \App\Models\User $user */
             $user = Auth::user();
             $user->increment('annual_leave_quota', $leaveRequest->total_days);
         }
 
-        $leaveRequest->status = 'cancelled'; 
-        $leaveRequest->save(); 
-        // Atau $leaveRequest->delete() jika mau hapus permanen dari database.
-        // Tapi di controller sebelumnya kita pakai soft delete status 'cancelled'.
-        // Kalau mau hapus barisnya: $leaveRequest->delete();
-
-        // Sesuai kode sebelumnya kita ubah status jadi cancelled, tapi route resource destroy biasanya delete.
-        // Mari kita sepakati HAPUS data saja biar tabel bersih.
+        // Menghapus data pengajuan cuti dari database
         $leaveRequest->delete();
 
         return redirect()->route('leaves.index')->with('success', 'Pengajuan dibatalkan.');
     }
 
-    // 5. DOWNLOAD PDF (FUNGSI BARU)
+    /**
+     * Mengunduh surat persetujuan cuti dalam format PDF
+     * Hanya tersedia untuk pengajuan dengan status disetujui
+     * 
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function downloadPdf($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
