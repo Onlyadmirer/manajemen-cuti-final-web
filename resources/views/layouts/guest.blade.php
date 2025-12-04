@@ -7,9 +7,10 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <title>{{ isset($title) ? $title . ' - ' : '' }}Manajemen Cuti</title>
-  
+
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='15' y='25' width='70' height='60' rx='5' fill='%233b82f6' opacity='0.2'/%3E%3Crect x='15' y='20' width='70' height='65' rx='5' fill='none' stroke='%233b82f6' stroke-width='3'/%3E%3Cline x1='35' y1='15' x2='35' y2='28' stroke='%233b82f6' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='65' y1='15' x2='65' y2='28' stroke='%233b82f6' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='20' y1='38' x2='80' y2='38' stroke='%233b82f6' stroke-width='2'/%3E%3Cpolyline points='35,55 45,65 65,45' fill='none' stroke='%233b82f6' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='15' y='25' width='70' height='60' rx='5' fill='%233b82f6' opacity='0.2'/%3E%3Crect x='15' y='20' width='70' height='65' rx='5' fill='none' stroke='%233b82f6' stroke-width='3'/%3E%3Cline x1='35' y1='15' x2='35' y2='28' stroke='%233b82f6' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='65' y1='15' x2='65' y2='28' stroke='%233b82f6' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='20' y1='38' x2='80' y2='38' stroke='%233b82f6' stroke-width='2'/%3E%3Cpolyline points='35,55 45,65 65,45' fill='none' stroke='%233b82f6' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.bunny.net">
