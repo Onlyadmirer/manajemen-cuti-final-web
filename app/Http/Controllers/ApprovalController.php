@@ -6,6 +6,7 @@ use App\Models\LeaveRequest;
 use App\Services\FonnteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Controller untuk mengelola persetujuan pengajuan cuti
@@ -140,5 +141,40 @@ class ApprovalController extends Controller
         $this->fonnteService->sendLeaveNotification($leaveRequest, 'rejected', $request->rejection_reason);
 
         return back()->with('success', 'Pengajuan ditolak. Kuota telah dikembalikan. Notifikasi telah dikirim.');
+    }
+
+    /**
+     * Menampilkan file attachment (surat dokter) untuk Manager dan HRD
+     * Hanya bisa diakses oleh Manager/HRD yang berwenang mereview pengajuan tersebut
+     * 
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function viewAttachment(LeaveRequest $leaveRequest)
+    {
+        $user = Auth::user();
+
+        // Validasi: File attachment harus ada
+        if (!$leaveRequest->attachment_path) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        // Validasi akses: Manager hanya bisa akses pengajuan dari divisinya
+        if ($user->role === 'division_manager') {
+            if (!$user->managedDivision || $leaveRequest->user->division_id !== $user->managedDivision->id) {
+                abort(403, 'Anda tidak memiliki akses ke file ini.');
+            }
+        }
+
+        // HRD bisa akses semua attachment dari pengajuan yang perlu direview
+        // Tidak perlu validasi khusus untuk HRD
+
+        // Cek apakah file ada di storage
+        if (!Storage::disk('public')->exists($leaveRequest->attachment_path)) {
+            abort(404, 'File tidak ditemukan di server.');
+        }
+
+        // Return file untuk ditampilkan di browser
+        return response()->file(Storage::disk('public')->path($leaveRequest->attachment_path));
     }
 }

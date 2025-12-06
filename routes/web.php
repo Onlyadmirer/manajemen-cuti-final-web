@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
         Route::patch('/approvals/{leaveRequest}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
         Route::patch('/approvals/{leaveRequest}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+        Route::get('/approvals/{leaveRequest}/attachment', [ApprovalController::class, 'viewAttachment'])->name('approvals.attachment');
     });
 
     // PROFILE (Bawaan)
