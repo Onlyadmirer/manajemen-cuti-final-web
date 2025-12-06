@@ -1,7 +1,8 @@
 <x-guest-layout>
   <div class="mb-6">
     <h2 class="mb-2 text-2xl font-bold text-gray-800">Selamat Datang!</h2>
-    <p class="text-sm text-gray-600">Silakan login untuk melanjutkan ke sistem</p>
+    <p class="text-sm text-gray-600">Silakan login untuk melanjutkan ke sistem, Pastikan Kamu sudah Terdaftar di sistem
+      oleh Admin</p>
   </div>
 
   <!-- Session Status -->
@@ -49,15 +50,6 @@
         class="w-full px-4 py-3 font-semibold text-white transition duration-200 rounded-lg shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl">
         Masuk
       </button>
-    </div>
-
-    <div class="pt-4 text-center border-t border-gray-200">
-      <p class="text-sm text-gray-600">
-        Belum punya akun?
-        @if (Route::has('register'))
-          <a href="{{ route('register') }}" class="font-semibold text-blue-600 hover:text-blue-800">Daftar sekarang</a>
-        @endif
-      </p>
     </div>
   </form>
 

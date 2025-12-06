@@ -1,4 +1,8 @@
-# Sistem Manajemen Cuti
+Dapatkan API Token
+
+Setelah login, buka menu Settings atau API (kalau tidak ada biasanya di menu Profile)
+Salin Token yang tersedia
+Token berbentuk string panjang (contoh: aBcDeFgHiJkLmNoPqRsTuVwXyZ123456)# Sistem Manajemen Cuti
 
 Aplikasi manajemen cuti berbasis web yang dibangun dengan Laravel 12 untuk mengelola pengajuan cuti karyawan, persetujuan, dan administrasi kepegawaian.
 
@@ -78,21 +82,17 @@ Aplikasi ini menggunakan Fonnte untuk mengirim notifikasi WhatsApp kepada kontak
     - Daftar dan buat akun baru
     - Login ke dashboard Fonnte
 
-2. **Dapatkan API Token**
+2. **Hubungkan Device WhatsApp & Dapatkan API Token**
 
-    - Setelah login, buka menu **Settings** atau **API** (kalau tidak ada biasanya di menu Profile)
-    - Salin **Token** yang tersedia
-    - Token berbentuk string panjang (contoh: `aBcDeFgHiJkLmNoPqRsTuVwXyZ123456`)
-
-3. **Hubungkan Device WhatsApp**
-
-    - Klik Menu Device di mennu navigasi
+    - Setelah login, Klik Menu Device di mennu navigasi
     - Klik add device
     - ikuti instruksi untuk menghubungkan nomor WhatsApp Anda
     - Scan QR code menggunakan WhatsApp di smartphone
     - Pastikan status device menunjukkan "Connected"
+    - Klik bagian Token diDevice yang sudah terkoneksi, otomatis token API akan tercopy
+    - Token berbentuk string panjang (contoh: `aBcDeFgHiJkLmNoPqRsTuVwXyZ123456`)
 
-4. **Tambahkan Token ke File `.env`**
+3. **Tambahkan Token ke File `.env`**
 
     Edit file `.env` dan tambahkan token Fonnte:
 
@@ -100,7 +100,7 @@ Aplikasi ini menggunakan Fonnte untuk mengirim notifikasi WhatsApp kepada kontak
     FONNTE_TOKEN=aBcDeFgHiJkLmNoPqRsTuVwXyZ123456
     ```
 
-5. **Test Konfigurasi Fonnte**
+4. **Test Konfigurasi Fonnte**
 
     Setelah menambahkan token, test apakah konfigurasi sudah benar:
 

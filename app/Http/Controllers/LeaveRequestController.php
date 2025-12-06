@@ -141,29 +141,29 @@ class LeaveRequestController extends Controller
      * Membatalkan pengajuan cuti yang masih berstatus pending
      * Mengembalikan kuota cuti jika jenis cuti adalah tahunan
      * 
-     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @param  \App\Models\LeaveRequest  $leaf
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destroy(LeaveRequest $leaveRequest)
+    public function destroy(LeaveRequest $leaf)
     {
         
-        if (Auth::id() !== $leaveRequest->user_id) {
+        if (Auth::id() !== $leaf->user_id) {
             abort(403);
         }
 
-        if ($leaveRequest->status !== 'pending') {
+        if ($leaf->status !== 'pending') {
             return back()->with('error', 'Tidak bisa dibatalkan karena sudah diproses.');
         }
 
         // Mengembalikan kuota cuti tahunan jika dibatalkan
-        if ($leaveRequest->leave_type == 'annual') {
+        if ($leaf->leave_type == 'annual') {
             /** @var \App\Models\User $user */
             $user = Auth::user();
-            $user->increment('annual_leave_quota', $leaveRequest->total_days);
+            $user->increment('annual_leave_quota', $leaf->total_days);
         }
 
         // Menghapus data pengajuan cuti dari database
-        $leaveRequest->delete();
+        $leaf->delete();
 
         return redirect()->route('leaves.index')->with('success', 'Pengajuan dibatalkan.');
     }
